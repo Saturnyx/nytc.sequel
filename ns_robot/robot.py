@@ -20,8 +20,6 @@ class RobotController:
                     self.sbbot.initialize(value)
                 case ns_shared.ENGBOT_NAME:
                     self.engbot.initialize(value)
-        if sbbot.ini
-
 
     def mainloop(self):
         """
