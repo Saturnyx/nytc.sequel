@@ -1,4 +1,5 @@
 from ugot import ugot
+
 import ns_shared
 
 
@@ -14,7 +15,7 @@ class RobotController:
     def connect_to_ugot(self):
         # use sbbot instance to scan
         devices = self.sbbot.scan_device()
-        for key,value in devices.items():
+        for key, value in devices.items():
             match key:
                 case ns_shared.SBBOT_NAME:
                     self.sbbot.initialize(value)

@@ -13,11 +13,15 @@ class ProcessManager:
         self.queue_channels = QueueChannels
         self.shared_state = SharedState
         self.robot = ns_robot.RobotController(SBBot, ENGBot, QueueChannels, SharedState)
-        self.sbbot_camera = ns_perception.Camera(self.SBBot,QueueChannels,SharedState)
-        self.engbot_camera = ns_perception.Camera(self.ENGBot,QueueChannels,SharedState)
+        self.sbbot_camera = ns_perception.Camera(self.SBBot, QueueChannels, SharedState)
+        self.engbot_camera = ns_perception.Camera(
+            self.ENGBot, QueueChannels, SharedState
+        )
 
         self.threads = [
-            threading.Thread(target=self.robot.mainloop())
+            threading.Thread(target=self.robot.mainloop),
+            threading.Thread(target=self.sbbot_camera.mainloop),
+            threading.Thread(target=self.engbot_camera.mainloop),
         ]
 
         for _ in self.threads:
