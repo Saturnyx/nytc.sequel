@@ -5,7 +5,13 @@ import ns_robot
 
 
 class RobotController:
-    def __init__(self, sbbot: ns_robot.RobotHardware, engbot: ns_robot.RobotHardware, QueueChannels, SharedState):
+    def __init__(
+        self,
+        sbbot: ns_robot.RobotHardware,
+        engbot: ns_robot.RobotHardware,
+        QueueChannels,
+        SharedState,
+    ):
         self.sbbot = sbbot
         self.engbot = engbot
         self.queue_channels = QueueChannels

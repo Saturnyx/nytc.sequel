@@ -8,12 +8,20 @@ import ns_robot
 
 
 class ProcessManager:
-    def __init__(self, SBBot: ns_robot.RobotHardware, ENGBot: ns_robot.RobotHardware, QueueChannels, SharedState):
+    def __init__(
+        self,
+        SBBot: ns_robot.RobotHardware,
+        ENGBot: ns_robot.RobotHardware,
+        QueueChannels,
+        SharedState,
+    ):
         self.SBBot = SBBot
         self.ENGBot = ENGBot
         self.queue_channels = QueueChannels
         self.shared_state = SharedState
-        self.robot_controller = ns_controller.RobotController(SBBot, ENGBot, QueueChannels, SharedState)
+        self.robot_controller = ns_controller.RobotController(
+            SBBot, ENGBot, QueueChannels, SharedState
+        )
         self.sbbot_camera = ns_perception.Camera(self.SBBot, QueueChannels, SharedState)
         self.engbot_camera = ns_perception.Camera(
             self.ENGBot, QueueChannels, SharedState

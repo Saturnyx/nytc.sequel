@@ -6,9 +6,13 @@ from turbojpeg import TurboJPEG
 from ns_shared import QueueChannels, SharedState
 import ns_robot
 
+
 class Camera:
     def __init__(
-        self, robot: ns_robot.RobotHardware, queue_channels: QueueChannels, shared_state: SharedState
+        self,
+        robot: ns_robot.RobotHardware,
+        queue_channels: QueueChannels,
+        shared_state: SharedState,
     ):
         self.robot = robot
         self.tj = TurboJPEG()
