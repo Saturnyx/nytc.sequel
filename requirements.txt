@@ -9,3 +9,4 @@ ultralytics-thop==2.0.18
 pygame-ce==2.5.7
 PyTurboJPEG==1.8.3
 colorlog==6.10.1
+dearpygui==2.3.1
