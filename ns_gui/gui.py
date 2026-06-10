@@ -2,6 +2,9 @@ import ctypes
 
 import pygame
 
+import logging
+
+logger = logging.Logger(__name__)
 
 class GUI:
     def __init__(self):
@@ -14,4 +17,5 @@ class GUI:
     def mainloop(self):
         for event in pygame.event.get():
             if event == pygame.QUIT:
+                pygame.quit()
                 return 0

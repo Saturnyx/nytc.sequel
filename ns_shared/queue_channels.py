@@ -1,5 +1,8 @@
 import threading
 
+import logging
+
+logger = logging.Logger(__name__)
 
 class QueueChannels:
     def __init__(self):

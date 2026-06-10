@@ -1,5 +1,8 @@
 from ugot import ugot
 
+import logging
+
+logger = logging.Logger(__name__)
 
 class RobotHardware:
     """Wrapper for the ugot.UGOT instance to allow for custom methods."""

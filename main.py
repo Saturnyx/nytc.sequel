@@ -1,4 +1,5 @@
 import threading
+import logging
 import time
 
 from ugot import ugot
@@ -7,9 +8,14 @@ import ns_controller
 import ns_gui
 import ns_shared
 import ns_robot
+import ns_logger
 
+logger = logging.Logger(__name__)
 
 def main():
+    ns_logger.setup_logging()
+    ns_logger.print_logo()
+
     QueueChannels = ns_shared.QueueChannels()
     SharedState = ns_shared.SharedState()
 
@@ -18,7 +24,7 @@ def main():
     )  # these are wrappers for ugot.UGOT.
     ENGBot = ns_robot.RobotHardware(
         QueueChannels, SharedState
-    )  # call methods by RobotHardware._sdk.whatever()
+    )  # call SDK methods by RobotHardware._sdk.whatever()
 
     gui = ns_gui.GUI()
     process_manager = ns_controller.ProcessManager(

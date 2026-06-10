@@ -1,10 +1,13 @@
 import threading
 
-from torch._C import parse_schema
 
 import ns_controller
 import ns_perception
 import ns_robot
+
+import logging
+
+logger = logging.Logger(__name__)
 
 
 class ProcessManager:

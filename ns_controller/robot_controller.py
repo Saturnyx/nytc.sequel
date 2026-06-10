@@ -3,6 +3,9 @@ from ugot import ugot
 import ns_shared
 import ns_robot
 
+import logging
+
+logger = logging.Logger(__name__)
 
 class RobotController:
     def __init__(

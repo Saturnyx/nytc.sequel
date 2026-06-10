@@ -1,2 +1,2 @@
-from camera import Camera
-from yolo import YoloManager
+from .camera import Camera
+from .yolo import YoloManager
