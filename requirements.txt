@@ -8,3 +8,4 @@ torchvision==0.26.0
 ultralytics-thop==2.0.18
 pygame-ce==2.5.7
 PyTurboJPEG==1.8.3
+colorlog==6.10.1

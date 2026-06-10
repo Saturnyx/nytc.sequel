@@ -20,3 +20,8 @@ class MicroState(Enum):
     task, not sure if I'll use it, but it's here"""
 
     pass
+
+
+class RobotModel:
+    SBBot = "SBBot"
+    ENGBot = "ENGBot"

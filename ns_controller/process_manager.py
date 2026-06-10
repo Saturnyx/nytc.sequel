@@ -1,13 +1,12 @@
+import logging
 import threading
-
 
 import ns_controller
 import ns_perception
 import ns_robot
+import ns_shared
 
-import logging
-
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ProcessManager:
@@ -31,18 +30,25 @@ class ProcessManager:
         )
 
         self.threads = [
-            threading.Thread(target=self.robot_controller.mainloop),
-            threading.Thread(target=self.sbbot_camera.mainloop),
-            threading.Thread(target=self.engbot_camera.mainloop),
+            ns_shared.construct_thread(self.robot_controller.mainloop),
+            ns_shared.construct_thread(self.sbbot_camera.mainloop),
+            ns_shared.construct_thread(self.engbot_camera.mainloop),
         ]
 
         for _ in self.threads:
+            logger.info(f"Starting thread {_.name}")
             _.start()
 
     def mainloop(self):
         while not self.queue_channels.kill_flag.is_set():
             pass
+        logger.info("Starting cleanup")
         # now do cleanup
         for _ in self.threads:
             _.join()
+            logger.info(
+                f"Thread {_.name} joined ({self.threads.index(_) + 1}/{len(self.threads)})"
+            )
         # and now he dies peacefully with all his children
+        logger.info("All threads joined!")
+        logger.info("ProcessManager succesfully shutdown")

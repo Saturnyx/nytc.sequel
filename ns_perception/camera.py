@@ -3,19 +3,19 @@ import base64
 import pygame
 from turbojpeg import TurboJPEG
 
-from ns_shared import QueueChannels, SharedState
-import ns_robot
+from ns_robot import RobotHardware
+from ns_shared import TURBOJPEG_PATH, QueueChannels, SharedState
 
 
 class Camera:
     def __init__(
         self,
-        robot: ns_robot.RobotHardware,
+        robot: RobotHardware,
         queue_channels: QueueChannels,
         shared_state: SharedState,
     ):
         self.robot = robot
-        self.tj = TurboJPEG()
+        self.tj = TurboJPEG(lib_path=TURBOJPEG_PATH)
         self.queue_channels = queue_channels
         self.shared_state = shared_state
 

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Run main.py",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "${workspaceFolder}/main.py",
+    "cwd": "${workspaceFolder}",
+    "console": "integratedTerminal",
+    "justMyCode": false,
+    "env": {
+      "PYTHONPATH": "${workspaceFolder}",
+    },
+  },
+  {
+    "label": "Execute main.py",
+    "adapter": "Debugpy",
+    "program": "main.py",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "request": "launch",
+  },
+  {
+    "adapter": "Debugpy",
+    "label": "run '…ption\\camera.py'",
+    "request": "launch",
+    "python": "$ZED_CUSTOM_PYTHON_ACTIVE_ZED_TOOLCHAIN",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "program": "\"$ZED_FILE\"",
+  },
+]

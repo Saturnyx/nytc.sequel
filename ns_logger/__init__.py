@@ -1,1 +1,1 @@
-from logging_config import setup_logging,print_logo
+from .logging_config import print_logo, setup_logging
