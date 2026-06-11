@@ -24,15 +24,32 @@ class ProcessManager:
         self.robot_controller = ns_controller.RobotController(
             SBBot, ENGBot, QueueChannels, SharedState
         )
-        self.sbbot_camera = ns_perception.Camera(self.SBBot, QueueChannels, SharedState)
+        self.sbbot_camera = ns_perception.Camera(
+            self.SBBot,
+            QueueChannels,
+            SharedState,
+            SharedState.sbb_camera_frame,
+            SharedState.sbb_camera_frame_lock,
+        )
         self.engbot_camera = ns_perception.Camera(
-            self.ENGBot, QueueChannels, SharedState
+            self.ENGBot,
+            QueueChannels,
+            SharedState,
+            SharedState.eng_camera_frame,
+            SharedState.eng_camera_frame_lock,
+        )
+        self.webcam = ns_perception.Webcam(
+            QueueChannels,
+            SharedState,
+            SharedState.webcam_camera_frame,
+            SharedState.webcam_camera_frame_lock,
         )
 
         self.threads = [
             ns_shared.construct_thread(self.robot_controller.mainloop),
             ns_shared.construct_thread(self.sbbot_camera.mainloop),
             ns_shared.construct_thread(self.engbot_camera.mainloop),
+            ns_shared.construct_thread(self.webcam.mainloop),
         ]
 
         for _ in self.threads:

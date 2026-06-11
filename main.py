@@ -37,7 +37,7 @@ def main():
     )  # call SDK methods by RobotHardware._sdk.whatever()
     logger.log(logging.INFO, "SBBot and ENGBot object declaration succesful")
 
-    gui = ns_gui.GUI()
+    gui = ns_gui.GUI(QueueChannels, SharedState)
     logger.log(logging.INFO, "GUI initialisation successful")
 
     process_manager = ns_controller.ProcessManager(
@@ -49,6 +49,12 @@ def main():
     for _ in threads:
         logging.log(logging.INFO, f"Starting thread for {_.name}")
         _.start()
+
+    logging.info("Building GUI...")
+
+    gui.build()
+
+    logging.info("Starting GUI mainloop")
 
     gui.mainloop()  # ensure pygame runs in the main thread
 
