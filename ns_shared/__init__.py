@@ -5,6 +5,6 @@ from .thread_constructor import construct_thread
 
 SBBOT_NAME = "UGOT_XXXA"
 ENGBOT_NAME = "UGOT_B052"
-SBBOT_IP = "idk"
-ENGBOT_IP = "192.168.88.1"
+SBBOT_IP = "192.168.137.197"
+ENGBOT_IP = "192.168.137.65"
 TURBOJPEG_PATH = "C:/libjpeg-turbo-gcc64/bin/libturbojpeg.dll"
