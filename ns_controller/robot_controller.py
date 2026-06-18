@@ -22,10 +22,10 @@ class RobotController:
         self.queue_channels = QueueChannels
         self.sharedState = SharedState
 
-        logger.info("Attempting to connect SBBot...")
-        self.sbbot.connect()
-        logger.info("Attempting to connect ENGBot...")
-        self.engbot.connect()
+        # logger.info("Attempting to connect SBBot...")
+        # self.sbbot.connect()
+        # logger.info("Attempting to connect ENGBot...")
+        # self.engbot.connect()
 
     def mainloop(self):
         """

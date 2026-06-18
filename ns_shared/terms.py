@@ -3,16 +3,19 @@ from enum import Enum
 
 logger = logging.Logger(__name__)
 
+class PhaseType(Enum):
+    """Class defining the two PhaseTypes (primarily for GUI usage.)"""
+    AUTONOMOUS = "Autonomous"
+    MANUAL = "Manual"
 
-class State(Enum):
+class Phase(Enum):
     """Class defining primary states/phases"""
-
-    IDLE = 0
-
-    Phase1 = 1
-    Phase2 = 2
-    Phase3 = 3
-    Phase4 = 4
+    Phase1 = ("Phase 1", PhaseType.AUTONOMOUS)
+    Phase2 = ("Phase 2", PhaseType.AUTONOMOUS)
+    Phase2A = ("Phase 2A", PhaseType.MANUAL)
+    Phase3 = ("Phase 3", PhaseType.AUTONOMOUS)
+    Phase4 = ("Phase 4", PhaseType.AUTONOMOUS)
+    Phase4A = ("Phase 4A", PhaseType.MANUAL)
 
 
 class MicroState(Enum):

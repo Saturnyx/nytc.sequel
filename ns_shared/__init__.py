@@ -1,6 +1,6 @@
 from .queue_channels import QueueChannels
 from .state import SharedState
-from .terms import MicroState, RobotModel, State
+from .terms import RobotModel, Phase, PhaseType, MicroState
 from .thread_constructor import construct_thread
 
 SBBOT_NAME = "UGOT_XXXA"

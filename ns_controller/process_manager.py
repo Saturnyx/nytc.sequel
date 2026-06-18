@@ -52,13 +52,17 @@ class ProcessManager:
             SharedState.webcam_camera_frame,
             SharedState.webcam_camera_frame_lock,
         )
-
+        self.block_detectiion = ns_perception.BlockDetector(
+            QueueChannels,
+            SharedState,
+        )
         self.threads = [
-            ns_shared.construct_thread(self.robot_controller.mainloop),
-            ns_shared.construct_thread(self.sbbot_camera.mainloop),
-            ns_shared.construct_thread(self.engbot_camera.mainloop),
+            # ns_shared.construct_thread(self.robot_controller.mainloop),
+            # ns_shared.construct_thread(self.sbbot_camera.mainloop),
+            # ns_shared.construct_thread(self.engbot_camera.mainloop),
             ns_shared.construct_thread(self.webcam.mainloop),
             ns_shared.construct_thread(self.webcam_processor.mainloop),
+            ns_shared.construct_thread(self.block_detectiion.mainloop)
         ]
 
         for _ in self.threads:

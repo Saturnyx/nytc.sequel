@@ -21,13 +21,18 @@ class Camera:
         camera_frame_lock,
     ):
         self.robot = robot
-        self.tj = TurboJPEG(lib_path=TURBOJPEG_PATH)
+
         self.queue_channels = queue_channels
         self.shared_state = shared_state
         self.camera_frame = camera_frame
         self.camera_frame_lock = camera_frame_lock
         self.fps = 30
         self.dt_target = 1 / self.fps
+        try:
+            self.tj = TurboJPEG(lib_path=TURBOJPEG_PATH)
+        except Exception as e:
+            logger.exception(e)
+            logger.error(f"TurboJPEG DLL was not found at {TURBOJPEG_PATH}! Please double check installation!")
 
         logger.info("Initialised succesfully")
 
@@ -38,7 +43,7 @@ class Camera:
         )  # reads from low-level unary_unary channel
 
     def b64_to_numpy_turbo(self, b64_string: str):
-        """Converts raw base64 encoded JPEG into pygame surface"""
+        """Converts raw base64 encoded JPEG into numpy array"""
         jpg_bytes = base64.b64decode(b64_string)
         if not jpg_bytes:
             return None
