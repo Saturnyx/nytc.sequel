@@ -28,8 +28,16 @@ class ProcessManager:
             self.SBBot,
             QueueChannels,
             SharedState,
-            SharedState.sbb_camera_frame,
-            SharedState.sbb_camera_frame_lock,
+            SharedState.sb_camera_frame,
+            SharedState.sb_camera_frame_lock,
+        )
+        self.sbbot_camera_gui_processor = ns_perception.CameraGUIProcessor(
+            QueueChannels,
+            SharedState,
+            SharedState.sb_camera_frame,
+            SharedState.sb_camera_frame_lock,
+            SharedState.sb_gui_camera_frame,
+            SharedState.sb_gui_camera_frame_lock,
         )
         self.engbot_camera = ns_perception.Camera(
             self.ENGBot,
@@ -37,6 +45,14 @@ class ProcessManager:
             SharedState,
             SharedState.eng_camera_frame,
             SharedState.eng_camera_frame_lock,
+        )
+        self.engbot_camera_gui_processor = ns_perception.CameraGUIProcessor(
+            QueueChannels,
+            SharedState,
+            SharedState.eng_camera_frame,
+            SharedState.eng_camera_frame_lock,
+            SharedState.eng_gui_camera_frame,
+            SharedState.eng_gui_camera_frame_lock,
         )
         self.webcam = ns_perception.Webcam(
             QueueChannels,
@@ -52,17 +68,24 @@ class ProcessManager:
             SharedState.webcam_camera_frame,
             SharedState.webcam_camera_frame_lock,
         )
-        self.block_detectiion = ns_perception.BlockDetector(
+
+        self.block_detection = ns_perception.BlockDetector(
             QueueChannels,
             SharedState,
         )
         self.threads = [
             # ns_shared.construct_thread(self.robot_controller.mainloop),
+
             # ns_shared.construct_thread(self.sbbot_camera.mainloop),
+            # ns_shared.construct_thread(self.sbbot_camera_gui_processor.mainloop),
+
             # ns_shared.construct_thread(self.engbot_camera.mainloop),
+            # ns_shared.construct_thread(self.engbot_camera_gui_processor.mainloop),
+
             ns_shared.construct_thread(self.webcam.mainloop),
             ns_shared.construct_thread(self.webcam_processor.mainloop),
-            ns_shared.construct_thread(self.block_detectiion.mainloop)
+
+            ns_shared.construct_thread(self.block_detection.mainloop),
         ]
 
         for _ in self.threads:

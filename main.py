@@ -9,6 +9,9 @@ import ns_shared
 
 
 def main():
+    #check for turbojpeg
+    ns_controller.turbojpeg_check()
+
     ns_logger.print_logo()
     ns_logger.setup_logging()
 

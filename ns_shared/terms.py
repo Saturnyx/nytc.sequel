@@ -1,15 +1,20 @@
 import logging
 from enum import Enum
 
+
 logger = logging.Logger(__name__)
+
 
 class PhaseType(Enum):
     """Class defining the two PhaseTypes (primarily for GUI usage.)"""
+
     AUTONOMOUS = "Autonomous"
     MANUAL = "Manual"
 
+
 class Phase(Enum):
     """Class defining primary states/phases"""
+
     Phase1 = ("Phase 1", PhaseType.AUTONOMOUS)
     Phase2 = ("Phase 2", PhaseType.AUTONOMOUS)
     Phase2A = ("Phase 2A", PhaseType.MANUAL)
@@ -25,6 +30,15 @@ class MicroState(Enum):
     pass
 
 
-class RobotModel:
+class RobotModel(Enum):
+    """Class storing the two robot models"""
+
     SBBot = "SBBot"
     ENGBot = "ENGBot"
+
+
+class BlockColour(Enum):
+    """Class storing upper and lower bounds of block colours (Phase 4)"""
+
+    RED = ((0, 120, 70),(10, 255, 255))
+    BLUE = ((100, 150, 50), (140, 255, 255))  # Example blue bounds

@@ -34,7 +34,7 @@ class CameraWindow(BaseWindow):
 
     def build(self):
         # dpg.set_item_callback(self.texture_tag, lambda: None)
-        with dpg.texture_registry(): # type: ignore
+        with dpg.texture_registry():  # type: ignore
             dpg.add_dynamic_texture(
                 width=self.width,
                 height=self.height,
@@ -46,7 +46,7 @@ class CameraWindow(BaseWindow):
             label=self.title,
             width=self.width + 20,
             height=self.height + 40,
-        ) as self.window_tag: # type: ignore
+        ) as self.window_tag:  # type: ignore
             dpg.add_image(self.texture_tag, tag=self.image_tag)
 
     def update(self):
@@ -55,6 +55,7 @@ class CameraWindow(BaseWindow):
         if frame is None:
             return
         dpg.set_value(self.texture_tag, frame.ravel())
+
 
 class PhaseTimeline(BaseWindow):
     def __init__(self, gui):
@@ -68,7 +69,7 @@ class PhaseTimeline(BaseWindow):
         self.header_drawlist = "timeline_header_drawlist"
 
         # Appearance & Dimensions
-        self.sidebar_width = 100
+        self.sidebar_width = 80
         self.total_width = 1000
         self.track_width = self.total_width - self.sidebar_width
 
@@ -78,7 +79,7 @@ class PhaseTimeline(BaseWindow):
 
         # Phase block dimensions
         self.phase_width = 110
-        self.phase_height = 38    # Bumped slightly to comfortably fit two lines of text
+        self.phase_height = 38  # Bumped slightly to comfortably fit two lines of text
         self.phase_spacing = 4
 
     def build(self):
@@ -87,9 +88,10 @@ class PhaseTimeline(BaseWindow):
             tag=self.window_tag,
             width=self.total_width,
             height=self.window_height,
+            pos=[0,1080-self.window_height],
             no_resize=True,
-            no_move=True,
-            no_collapse=True
+            #no_move=True,
+            no_collapse=True,
         ):
             with dpg.group(horizontal=True, horizontal_spacing=0):  # type: ignore
 
@@ -112,10 +114,7 @@ class PhaseTimeline(BaseWindow):
 
     # Added the function_name parameter as requested
     def add_phase(self, name, function_name="None"):
-        self.phases.append({
-            "name": name,
-            "function_name": function_name
-        })
+        self.phases.append({"name": name, "function_name": function_name})
         self.redraw()
 
     def delete_phase(self, index):
@@ -129,10 +128,11 @@ class PhaseTimeline(BaseWindow):
 
         # 1. Draw Grayed-Out Track Background
         dpg.draw_rectangle(
-            (0, 0), (self.track_width, self.track_height),
+            (0, 0),
+            (self.track_width, self.track_height),
             fill=(35, 35, 35, 255),
             color=(55, 55, 55, 255),
-            parent=self.track_drawlist
+            parent=self.track_drawlist,
         )
 
         # 2. Draw Phases sequentially on the track
@@ -145,20 +145,23 @@ class PhaseTimeline(BaseWindow):
 
             # Modern flat phase block
             dpg.draw_rectangle(
-                (x_offset, y1), (x_offset + self.phase_width, y2),
+                (x_offset, y1),
+                (x_offset + self.phase_width, y2),
                 fill=(54, 106, 201, 255),
                 color=(30, 30, 30, 255),
                 rounding=3.0,
-                parent=self.track_drawlist
+                parent=self.track_drawlist,
             )
 
             # Top: Small function name aligned left
             dpg.draw_text(
                 (x_offset + 6, y1 + 3),
-                phase["function_name"].upper(), # Uppercase makes small system text look clean
+                phase[
+                    "function_name"
+                ].upper(),  # Uppercase makes small system text look clean
                 parent=self.track_drawlist,
                 size=10,
-                color=(180, 210, 255, 230) # Subtle, lighter blue-gray accent color
+                color=(180, 210, 255, 230),  # Subtle, lighter blue-gray accent color
             )
 
             # Bottom: Larger phase name aligned left
@@ -167,7 +170,7 @@ class PhaseTimeline(BaseWindow):
                 phase["name"],
                 parent=self.track_drawlist,
                 size=15,
-                color=(255, 255, 255, 255) # Bright white for readability
+                color=(255, 255, 255, 255),  # Bright white for readability
             )
 
             x_offset += self.phase_width + self.phase_spacing
@@ -181,7 +184,7 @@ class PhaseTimeline(BaseWindow):
             (playhead_x, self.header_height),
             fill=(230, 40, 40, 255),
             color=(230, 40, 40, 255),
-            parent=self.header_drawlist
+            parent=self.header_drawlist,
         )
 
         dpg.draw_line(
@@ -189,8 +192,9 @@ class PhaseTimeline(BaseWindow):
             (playhead_x, self.track_height),
             color=(230, 40, 40, 220),
             thickness=1,
-            parent=self.track_drawlist
+            parent=self.track_drawlist,
         )
+
 
 class GUI:
     def __init__(self, QueueChannels, SharedState):
@@ -204,13 +208,9 @@ class GUI:
         dpg.create_context()
         dpg.configure_app(docking=True, docking_space=True)
 
+        with dpg.font_registry():  # type: ignore
 
-        with dpg.font_registry(): # type: ignore
-
-            default_font = dpg.add_font(
-                "ns_gui/assets/Inter_18pt-Regular.ttf",
-                18
-            )
+            default_font = dpg.add_font("ns_gui/assets/Inter_18pt-Regular.ttf", 18)
 
         dpg.bind_font(default_font)
 
@@ -221,18 +221,15 @@ class GUI:
             window.build()
 
         dpg.create_viewport(
-            title="nytc.sequel",
-            width=1920,
-            height=1080,
-            resizable=False
+            title="nytc.sequel", width=1920, height=1080, resizable=False
         )
 
-        self.windows[1].add_phase("Phase 1","phase1")
-        self.windows[1].add_phase("Phase 2","phase2")
-        self.windows[1].add_phase("Phase 2A","opcontrol")
-        self.windows[1].add_phase("Phase 3","phase3")
-        self.windows[1].add_phase("Phase 4","phase4")
-        self.windows[1].add_phase("Phase 4A","opcontrol")
+        self.windows[1].add_phase("Phase 1", "phase1")
+        self.windows[1].add_phase("Phase 2", "phase2")
+        self.windows[1].add_phase("Phase 2A", "opcontrol")
+        self.windows[1].add_phase("Phase 3", "phase3")
+        self.windows[1].add_phase("Phase 4", "phase4")
+        self.windows[1].add_phase("Phase 4A", "opcontrol")
 
         dpg.setup_dearpygui()
         dpg.show_viewport()

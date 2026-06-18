@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-
+import cv2
 import numpy as np
 from turbojpeg import TurboJPEG
 
@@ -32,7 +32,9 @@ class Camera:
             self.tj = TurboJPEG(lib_path=TURBOJPEG_PATH)
         except Exception as e:
             logger.exception(e)
-            logger.error(f"TurboJPEG DLL was not found at {TURBOJPEG_PATH}! Please double check installation!")
+            logger.error(
+                f"TurboJPEG DLL was not found at {TURBOJPEG_PATH}! Please double check installation!"
+            )
 
         logger.info("Initialised succesfully")
 
@@ -63,3 +65,59 @@ class Camera:
             sleep_time = self.dt_target - dt
             if sleep_time > 0:
                 time.sleep(sleep_time)
+
+class CameraGUIProcessor:
+    """Thine only purpose is to make the raw frame usable by DearPyGUI."""
+
+    def __init__(
+        self,
+        QueueChannels: QueueChannels,
+        SharedState: SharedState,
+        raw_camera_frame,
+        raw_camera_frame_lock,
+        camera_frame,
+        camera_frame_lock,
+    ):
+        self.queue_channels = QueueChannels
+        self.shared_state = SharedState
+        self.camera_frame = camera_frame
+        self.camera_frame_lock = camera_frame_lock
+        self.raw_camera_frame = raw_camera_frame
+        self.raw_camera_frame_lock = raw_camera_frame_lock
+
+        self.width = 640
+        self.height = 480
+
+        # self.alpha = np.ones((self.height, self.width), dtype=np.float32)
+        # self.output = np.empty((self.height, self.width, 4), dtype=np.float32)
+
+    def process(self, frame):
+        if frame is None:
+            return None
+
+        # Safety resize if needed
+        if frame.shape[0] != self.height or frame.shape[1] != self.width:
+            frame = cv2.resize(frame, (self.width, self.height))
+
+        # SHEER OPTIMIZATION:
+        # 1. frame[:, :, ::-1] flips BGR to RGB via zero-overhead memory strides
+        # 2. .ravel() flattens it to a 1D sequence
+        # 3. Converting to float32 and dividing normalizes it perfectly for DPG
+        rgb_flat = frame[:, :, ::-1].ravel().astype(np.float32) / 255.0
+        return rgb_flat
+
+    def mainloop(self):
+
+
+        while not self.queue_channels.kill_flag.is_set():
+            with self.raw_camera_frame_lock:
+                frame = self.raw_camera_frame
+
+            if frame is None:
+                time.sleep(0.001)
+                continue
+
+            processed = self.process(frame)
+
+            with self.camera_frame_lock:
+                self.camera_frame = processed
