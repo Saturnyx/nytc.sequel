@@ -1,4 +1,4 @@
-#National Youth Tech Championship 2026: Blank's Repository
+# National Youth Tech Championship 2026 Finals: Blank's Repository
 
 **This codebase makes use of:**
 - Extensive multithreading
