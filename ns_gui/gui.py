@@ -1,4 +1,5 @@
 import logging
+import time
 
 import cv2
 import numpy as np
@@ -51,19 +52,8 @@ class CameraWindow(BaseWindow):
     def update(self):
         with self.gui.shared_state.webcam_camera_frame_lock:
             frame = self.gui.shared_state.webcam_camera_frame
-
         if frame is None:
             return
-        # force correct size ALWAYS
-        frame = cv2.resize(frame, (self.width, self.height))
-
-        # ensure RGB float
-        frame = frame.astype(np.float32) / 255.0
-
-        # add alpha channel
-        alpha = np.ones((self.height, self.width, 1), dtype=np.float32)
-        frame = np.concatenate((frame, alpha), axis=2)
-
         dpg.set_value(self.texture_tag, frame.ravel())
 
 
@@ -93,11 +83,20 @@ class GUI:
         dpg.show_viewport()
 
     def mainloop(self):
+        last = time.time()
+        frames = 0
 
         while dpg.is_dearpygui_running():
             for window in self.windows:
                 window.update()
 
             dpg.render_dearpygui_frame()
+
+            frames += 1
+
+            if time.time() - last > 1:
+                # print("GUI FPS:", frames)
+                frames = 0
+                last = time.time()
 
         dpg.destroy_context()

@@ -13,5 +13,8 @@ class SharedState:
         self.eng_camera_frame_lock = threading.Lock()
         self.eng_camera_frame = None
 
+        self.raw_webcam_camera_frame_lock = threading.Lock()
+        self.raw_webcam_camera_frame = None
+
         self.webcam_camera_frame_lock = threading.Lock()
         self.webcam_camera_frame = None

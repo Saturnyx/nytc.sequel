@@ -44,12 +44,21 @@ class ProcessManager:
             SharedState.webcam_camera_frame,
             SharedState.webcam_camera_frame_lock,
         )
+        self.webcam_processor = ns_perception.WebcamProcessor(
+            QueueChannels,
+            SharedState,
+            SharedState.raw_webcam_camera_frame,
+            SharedState.raw_webcam_camera_frame_lock,
+            SharedState.webcam_camera_frame,
+            SharedState.webcam_camera_frame_lock,
+        )
 
         self.threads = [
             ns_shared.construct_thread(self.robot_controller.mainloop),
             ns_shared.construct_thread(self.sbbot_camera.mainloop),
             ns_shared.construct_thread(self.engbot_camera.mainloop),
             ns_shared.construct_thread(self.webcam.mainloop),
+            ns_shared.construct_thread(self.webcam_processor.mainloop),
         ]
 
         for _ in self.threads:
