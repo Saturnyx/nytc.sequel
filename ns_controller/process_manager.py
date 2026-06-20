@@ -57,8 +57,8 @@ class ProcessManager:
         self.webcam = ns_perception.Webcam(
             QueueChannels,
             SharedState,
-            SharedState.webcam_camera_frame,
-            SharedState.webcam_camera_frame_lock,
+            SharedState.raw_webcam_camera_frame,
+            SharedState.raw_webcam_camera_frame_lock,
         )
         self.webcam_processor = ns_perception.WebcamProcessor(
             QueueChannels,

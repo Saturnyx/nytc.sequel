@@ -10,4 +10,4 @@ pygame-ce==2.5.7
 PyTurboJPEG==1.8.3
 colorlog==6.10.1
 dearpygui==2.3.1
-mediapipe==0.10.35
+mediapipe=0.10.35

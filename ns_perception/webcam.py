@@ -22,7 +22,7 @@ class Webcam:
         self.camera_frame = camera_frame
         self.camera_frame_lock = camera_frame_lock
 
-        self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        self.capture = cv2.VideoCapture(1, cv2.CAP_DSHOW)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -30,8 +30,11 @@ class Webcam:
         if not self.capture.isOpened():
             raise RuntimeError("Camera failed to open")
         logger.info("Initialised succesfully")
+        self.temp_counter = 0
 
     def poll_camera_frame(self):
+        self.temp_counter += 1
+
         self.capture.grab()  # fast: just grab latest frame
         ret, frame = self.capture.retrieve()
 
@@ -41,8 +44,12 @@ class Webcam:
         return frame
 
     def put_camera_frame(self, frame):
-        with self.shared_state.raw_webcam_camera_frame_lock:
-            self.shared_state.raw_webcam_camera_frame = frame
+        with self.camera_frame_lock:
+            self.camera_frame = frame
+            if self.camera_frame_lock is self.shared_state.raw_webcam_camera_frame_lock:
+                self.shared_state.raw_webcam_camera_frame = frame
+            elif self.camera_frame_lock is self.shared_state.webcam_camera_frame_lock:
+                self.shared_state.webcam_camera_frame = frame
 
     def mainloop(self):
         while not self.queue_channels.kill_flag.is_set():
@@ -92,8 +99,14 @@ class WebcamProcessor:
         last_frame_id = None
 
         while not self.queue_channels.kill_flag.is_set():
-            with self.shared_state.raw_webcam_camera_frame_lock:
-                frame = self.shared_state.raw_webcam_camera_frame
+            with self.raw_camera_frame_lock:
+                if (
+                    self.raw_camera_frame_lock
+                    is self.shared_state.raw_webcam_camera_frame_lock
+                ):
+                    frame = self.shared_state.raw_webcam_camera_frame
+                else:
+                    frame = self.raw_camera_frame
 
             if frame is None:
                 time.sleep(0.001)
@@ -107,5 +120,7 @@ class WebcamProcessor:
 
             processed = self.process(frame)
 
-            with self.shared_state.webcam_camera_frame_lock:
-                self.shared_state.webcam_camera_frame = processed
+            with self.camera_frame_lock:
+                self.camera_frame = processed
+                if self.camera_frame_lock is self.shared_state.webcam_camera_frame_lock:
+                    self.shared_state.webcam_camera_frame = processed

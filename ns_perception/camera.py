@@ -59,6 +59,10 @@ class Camera:
             with self.camera_frame_lock:
                 # now we have access
                 self.camera_frame = frame
+                if self.camera_frame_lock is self.shared_state.sb_camera_frame_lock:
+                    self.shared_state.sb_camera_frame = frame
+                elif self.camera_frame_lock is self.shared_state.eng_camera_frame_lock:
+                    self.shared_state.eng_camera_frame = frame
             # now we release the lock, calculate delta time and do dynamic delays
             end_time = time.perf_counter()
             dt = end_time - start_time
@@ -107,11 +111,14 @@ class CameraGUIProcessor:
         return rgb_flat
 
     def mainloop(self):
-
-
         while not self.queue_channels.kill_flag.is_set():
             with self.raw_camera_frame_lock:
-                frame = self.raw_camera_frame
+                if self.raw_camera_frame_lock is self.shared_state.sb_camera_frame_lock:
+                    frame = self.shared_state.sb_camera_frame
+                elif self.raw_camera_frame_lock is self.shared_state.eng_camera_frame_lock:
+                    frame = self.shared_state.eng_camera_frame
+                else:
+                    frame = self.raw_camera_frame
 
             if frame is None:
                 time.sleep(0.001)
@@ -121,3 +128,8 @@ class CameraGUIProcessor:
 
             with self.camera_frame_lock:
                 self.camera_frame = processed
+                if self.camera_frame_lock is self.shared_state.sb_gui_camera_frame_lock:
+                    self.shared_state.sb_gui_camera_frame = processed
+                elif self.camera_frame_lock is self.shared_state.eng_gui_camera_frame_lock:
+                    self.shared_state.eng_gui_camera_frame = processed
+

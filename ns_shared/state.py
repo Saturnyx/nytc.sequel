@@ -1,6 +1,9 @@
 import logging
 import threading
+import time
+
 from ns_shared.config import DEFAULT_TIMELINE_CONFIG
+
 logger = logging.Logger(__name__)
 
 
@@ -27,3 +30,6 @@ class SharedState:
 
         self.phase_list_lock = threading.Lock()
         self.phase_list = list(DEFAULT_TIMELINE_CONFIG)
+
+        self.temp = (-1, time.perf_counter())
+        self.temp_lock = threading.Lock()
