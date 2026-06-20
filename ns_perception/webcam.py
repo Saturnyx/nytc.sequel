@@ -30,10 +30,10 @@ class Webcam:
         if not self.capture.isOpened():
             raise RuntimeError("Camera failed to open")
         logger.info("Initialised succesfully")
-        self.temp_counter = 0
+        # self.temp_counter = 0
 
     def poll_camera_frame(self):
-        self.temp_counter += 1
+        # self.temp_counter += 1
 
         self.capture.grab()  # fast: just grab latest frame
         ret, frame = self.capture.retrieve()
