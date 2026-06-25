@@ -19,7 +19,7 @@ class BlockDetector:
 
         # --- PHYSICAL & CALIBRATION PARAMETERS ---
         self.cube_real_width = 5.0
-        self.calibrated_focal_length = 650.0
+        self.calibrated_focal_length = 120.61
 
         # --- TUNING PARAMETERS ---
         self.min_contour_area = 200
@@ -45,7 +45,8 @@ class BlockDetector:
         # Loop through all possible block colors defined in the Enum
         for color_enum in ns_shared.BlockColour:
             lower_bound, upper_bound = color_enum.value
-
+            lower_bound = np.array(lower_bound)
+            upper_bound = np.array(upper_bound)
             # Mask and filter for the current color
             mask = cv2.inRange(hsv, lower_bound, upper_bound)
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, self.morphology_kernel)
