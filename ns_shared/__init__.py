@@ -1,5 +1,5 @@
-from .queue_channels import QueueChannels
-from .state import SharedState
-from .terms import RobotModel, Phase, PhaseType, MicroState, BlockColour
-from .thread_constructor import construct_thread
 from .config import *
+from .queue_channels import QueueChannels
+from .shared_state import SharedState
+from .terms import BlockColour, MicroState, Phase, PhaseType, RobotModel
+from .thread_constructor import construct_thread
