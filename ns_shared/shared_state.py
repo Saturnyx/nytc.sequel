@@ -3,6 +3,7 @@ import threading
 import time
 
 from ns_shared.config import DEFAULT_TIMELINE_CONFIG
+from ns_shared.terms import PhaseState
 
 logger = logging.Logger(__name__)
 
@@ -28,8 +29,10 @@ class SharedState:
         self.webcam_camera_frame_lock = threading.Lock()
         self.webcam_camera_frame = None
 
-        self.phase_list_lock = threading.Lock()
-        self.phase_list = list(DEFAULT_TIMELINE_CONFIG)
+        # self.phase_list_lock = threading.Lock()
+        # self.phase_list = list(DEFAULT_TIMELINE_CONFIG)
 
-        self.temp = (-1, time.perf_counter())
-        self.temp_lock = threading.Lock()
+        # self.current_phase_lock = threading.Lock()
+        # self.current_phase = None
+
+        self.phase_state = PhaseState(DEFAULT_TIMELINE_CONFIG)

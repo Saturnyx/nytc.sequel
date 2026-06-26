@@ -9,7 +9,7 @@ import ns_shared
 
 
 def main():
-    #check for turbojpeg
+    # check for turbojpeg
     ns_controller.turbojpeg_check()
 
     ns_logger.print_logo()
@@ -18,6 +18,13 @@ def main():
     logger = logging.getLogger(__name__)
 
     logger.log(logging.INFO, "Logging setup successful")
+
+    # check if debug mode is on
+
+    if ns_shared.config.DEBUG_MODE:
+        logger.warning(
+            "PROGRAM IS RUNNING IN DEBUG MODE\nAll robot functionalities will not work!"
+        )
 
     QueueChannels = ns_shared.QueueChannels()
     logger.log(logging.INFO, "QueueChannels object creation successful")

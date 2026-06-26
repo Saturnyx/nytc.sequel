@@ -73,20 +73,28 @@ class ProcessManager:
             QueueChannels,
             SharedState,
         )
-        self.threads = [
-            # ns_shared.construct_thread(self.robot_controller.mainloop),
-
-            # ns_shared.construct_thread(self.sbbot_camera.mainloop),
-            # ns_shared.construct_thread(self.sbbot_camera_gui_processor.mainloop),
-
-            # ns_shared.construct_thread(self.engbot_camera.mainloop),
-            # ns_shared.construct_thread(self.engbot_camera_gui_processor.mainloop),
-
-            ns_shared.construct_thread(self.webcam.mainloop),
-            ns_shared.construct_thread(self.webcam_processor.mainloop),
-
-            ns_shared.construct_thread(self.block_detection.mainloop),
-        ]
+        if ns_shared.DEBUG_MODE:
+            self.threads = [
+                ns_shared.construct_thread(self.robot_controller.mainloop),
+                # ns_shared.construct_thread(self.sbbot_camera.mainloop),
+                # ns_shared.construct_thread(self.sbbot_camera_gui_processor.mainloop),
+                # ns_shared.construct_thread(self.engbot_camera.mainloop),
+                # ns_shared.construct_thread(self.engbot_camera_gui_processor.mainloop),
+                ns_shared.construct_thread(self.webcam.mainloop),
+                ns_shared.construct_thread(self.webcam_processor.mainloop),
+                ns_shared.construct_thread(self.block_detection.mainloop),
+            ]
+        else:
+            self.threads = [
+                ns_shared.construct_thread(self.robot_controller.mainloop),
+                ns_shared.construct_thread(self.sbbot_camera.mainloop),
+                ns_shared.construct_thread(self.sbbot_camera_gui_processor.mainloop),
+                ns_shared.construct_thread(self.engbot_camera.mainloop),
+                ns_shared.construct_thread(self.engbot_camera_gui_processor.mainloop),
+                ns_shared.construct_thread(self.webcam.mainloop),
+                ns_shared.construct_thread(self.webcam_processor.mainloop),
+                ns_shared.construct_thread(self.block_detection.mainloop),
+            ]
 
         for _ in self.threads:
             logger.info(f"Starting thread {_.name}")

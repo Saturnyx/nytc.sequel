@@ -1,6 +1,6 @@
 import logging
+import threading
 from enum import Enum
-
 
 logger = logging.Logger(__name__)
 
@@ -40,5 +40,16 @@ class RobotModel(Enum):
 class BlockColour(Enum):
     """Class storing upper and lower bounds of block colours (Phase 4)"""
 
-    RED = ((0, 120, 70),(10, 255, 255))
+    RED = ((0, 120, 70), (10, 255, 255))
     BLUE = ((100, 150, 50), (140, 255, 255))  # Example blue bounds
+
+
+class PhaseState:
+    def __init__(self, timeline_config: list):
+        self.lock = threading.Lock()
+        if not timeline_config:
+            self.phase_queue = []
+        else:
+            self.phase_queue = timeline_config
+        self.current_phase_index = None
+        self.is_running = threading.Event()

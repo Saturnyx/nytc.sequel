@@ -22,7 +22,7 @@ class Webcam:
         self.camera_frame = camera_frame
         self.camera_frame_lock = camera_frame_lock
 
-        self.capture = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+        self.capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
