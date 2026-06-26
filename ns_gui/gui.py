@@ -202,11 +202,15 @@ class PhaseTimeline(BaseWindow):
             func_text = p_type.value.upper()
 
             # --- DYNAMIC COLOR ENGINE (String-Safe Variant) ---
-            # Using .name string checking handles foreign module enum evaluations cleanly
             is_autonomous = (
                 p_type.name == "AUTONOMOUS"
                 if hasattr(p_type, "name")
-                else "Auto" in str(p_type)
+                else "Autonomous" in str(p_type)
+            )
+            is_pose = (
+                p_type.name == "POSE"
+                if hasattr(p_type, "name")
+                else "Manual (Pose)" in str(p_type)
             )
 
             if is_running and idx < current_idx:
@@ -214,20 +218,28 @@ class PhaseTimeline(BaseWindow):
                 fill_color = (65, 70, 75, 255)
                 accent_color = (130, 140, 150, 180)
                 text_color = (150, 150, 150, 180)
+
             elif is_running and idx == current_idx:
                 # ACTIVE EXECUTING STEP: Bold high-vibrancy warnings
                 if is_autonomous:
                     fill_color = (36, 111, 232, 255)  # Vivid Royal Blue
                     accent_color = (180, 220, 255, 255)
+                elif is_pose:
+                    fill_color = (138, 43, 226, 255)  # Electric Purple / Violet
+                    accent_color = (230, 190, 255, 255)  # Soft Lavender Text Accent
                 else:
                     fill_color = (220, 110, 10, 255)  # Active Manual Amber
                     accent_color = (255, 220, 170, 255)
                 text_color = (255, 255, 255, 255)
+
             else:
                 # UPCOMING FUTURE STEPS: Light/Ice clear variants
                 if is_autonomous:
                     fill_color = (75, 105, 150, 255)  # Slate Ice Blue
                     accent_color = (190, 215, 240, 220)
+                elif is_pose:
+                    fill_color = (90, 60, 135, 255)  # Deep Matte Amethyst
+                    accent_color = (210, 180, 240, 220)  # Muted Purple Accent
                 else:
                     fill_color = (165, 115, 75, 255)  # Soft Terracotta Matte
                     accent_color = (240, 210, 190, 220)

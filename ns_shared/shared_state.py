@@ -36,3 +36,17 @@ class SharedState:
         # self.current_phase = None
 
         self.phase_state = PhaseState(DEFAULT_TIMELINE_CONFIG)
+
+        self.drive_command_lock = threading.Lock()
+        # Mecanum/Omni vectors: x (strafe), y (forward), r (rotation)
+        self.drive_x = 0.0
+        self.drive_y = 0.0
+        self.drive_r = 0.0
+
+        # Button triggers for discrete actions (like opening a mechanism or emergency stopping)
+        self.controller_buttons = {
+            "cross": False,
+            "circle": False,
+            "square": False,
+            "triangle": False,
+        }

@@ -73,6 +73,7 @@ class ProcessManager:
             QueueChannels,
             SharedState,
         )
+        self.ps4_driver = ns_controller.PS4ControllerDriver(QueueChannels, SharedState)
         if ns_shared.DEBUG_MODE:
             self.threads = [
                 ns_shared.construct_thread(self.robot_controller.mainloop),
@@ -83,6 +84,7 @@ class ProcessManager:
                 ns_shared.construct_thread(self.webcam.mainloop),
                 ns_shared.construct_thread(self.webcam_processor.mainloop),
                 ns_shared.construct_thread(self.block_detection.mainloop),
+                ns_shared.construct_thread(self.ps4_driver.mainloop),
             ]
         else:
             self.threads = [
@@ -94,10 +96,13 @@ class ProcessManager:
                 ns_shared.construct_thread(self.webcam.mainloop),
                 ns_shared.construct_thread(self.webcam_processor.mainloop),
                 ns_shared.construct_thread(self.block_detection.mainloop),
+                ns_shared.construct_thread(self.ps4_driver.mainloop),
             ]
 
         for _ in self.threads:
-            logger.info(f"Starting thread {_.name}")
+            logger.info(
+                f"Starting thread {_.name} ({self.threads.index(_) + 1}/{len(self.threads)})"
+            )
             _.start()
 
     def mainloop(self):

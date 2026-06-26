@@ -10,6 +10,7 @@ class PhaseType(Enum):
 
     AUTONOMOUS = "Autonomous"
     MANUAL = "Manual"
+    POSE = "Manual (Pose)"
 
 
 class Phase(Enum):
@@ -18,7 +19,7 @@ class Phase(Enum):
     Phase1 = ("Phase 1", PhaseType.AUTONOMOUS)
     Phase2 = ("Phase 2", PhaseType.AUTONOMOUS)
     Phase2A = ("Phase 2A", PhaseType.MANUAL)
-    Phase3 = ("Phase 3", PhaseType.AUTONOMOUS)
+    Phase3 = ("Phase 3", PhaseType.POSE)
     Phase4 = ("Phase 4", PhaseType.AUTONOMOUS)
     Phase4A = ("Phase 4A", PhaseType.MANUAL)
 
