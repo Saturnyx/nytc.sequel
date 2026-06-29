@@ -16,8 +16,8 @@ class RobotController:
         self,
         sbbot: ns_robot.RobotHardware,
         engbot: ns_robot.RobotHardware,
-        QueueChannels,
-        SharedState,
+        QueueChannels: ns_shared.QueueChannels,
+        SharedState: ns_shared.SharedState,
     ):
 
         self.queue_channels = QueueChannels
@@ -36,6 +36,18 @@ class RobotController:
         self.sbbot = sbbot
         logger.info("Attempting to connect SBBot...")
         self.sbbot.connect()
+
+    def map_value_clamped(self, value, in_min, in_max, out_min, out_max):
+        # Get the unclipped mapped value
+        mapped = out_min + (
+            float(value - in_min) / float(in_max - in_min) * (out_max - out_min)
+        )
+
+        # Ensure the bounds are respected regardless of whether out_min or out_max is larger
+        true_min = min(out_min, out_max)
+        true_max = max(out_min, out_max)
+
+        return int(max(true_min, min(true_max, mapped)))
 
     def mainloop(self):
         """
@@ -100,6 +112,13 @@ class RobotController:
         self.advance_phase()
 
     def phase2(self):
+        # Move forward while finding red ball, change colour when found
+        # Align with red ball
+        # Pickup
+        # Goto the stop line and stop
+        # Find villian, change colour when found
+        # Shoot at pos 1 or 2 or 3
+
         time.sleep(1)
         self.advance_phase()
 
@@ -128,7 +147,19 @@ class RobotController:
         self.advance_phase()
 
     def opcontrol(self):
-        time.sleep(1)
+        # time.sleep(1)
+        while not self.queue_channels.kill_flag.is_set():
+            with self.sharedState.drive_command_lock:
+                x_movement = self.sharedState.drive_x
+                y_movement = self.sharedState.drive_y
+                r_movement = self.sharedState.drive_r
+
+            x_movement = self.map_value_clamped(x_movement, -1, 1, -80, 80)
+            y_movement = self.map_value_clamped(y_movement, -1, 1, -80, 80)
+            r_movement = self.map_value_clamped(r_movement, 1, -1, -280, 280)
+
+            self.engbot._sdk.mecanum_move_xyz(x_movement, y_movement, r_movement)
+            time.sleep(0.04)
 
     def advance_phase(self):
         with self.sharedState.phase_state.lock:

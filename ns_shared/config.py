@@ -11,7 +11,7 @@ DEFAULT_TIMELINE_CONFIG = [
 
 SBBOT_NAME = "UGOT_XXXA"
 ENGBOT_NAME = "UGOT_B052"
-SBBOT_IP = "192.168.137.86"
+SBBOT_IP = "192.168.137.238"
 ENGBOT_IP = "192.168.137.41"
 TURBOJPEG_PATH = "C:/libjpeg-turbo-gcc64/bin/libturbojpeg.dll"
-DEBUG_MODE = True  # True if testing in no-bot mode
+DEBUG_MODE = False  # True if testing in no-bot mode
