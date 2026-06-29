@@ -1,12 +1,13 @@
 import base64
 import logging
 import time
+
 import cv2
 import numpy as np
-from turbojpeg import TurboJPEG
+from turbojpeg import TJPF_BGR, TurboJPEG
 
-from ns_robot import RobotHardware
-from ns_shared import TURBOJPEG_PATH, QueueChannels, SharedState
+import ns_robot
+import ns_shared
 
 logger = logging.getLogger(__name__)
 
@@ -14,108 +15,126 @@ logger = logging.getLogger(__name__)
 class Camera:
     def __init__(
         self,
-        robot: RobotHardware,
-        queue_channels: QueueChannels,
-        shared_state: SharedState,
+        robot: ns_robot.RobotHardware,
+        queue_channels: ns_shared.QueueChannels,
+        shared_state: ns_shared.SharedState,
         camera_frame,
         camera_frame_lock,
     ):
         self.robot = robot
-
         self.queue_channels = queue_channels
         self.shared_state = shared_state
         self.camera_frame = camera_frame
         self.camera_frame_lock = camera_frame_lock
-        self.fps = 30
-        self.dt_target = 1 / self.fps
-        try:
-            self.tj = TurboJPEG(lib_path=TURBOJPEG_PATH)
-        except Exception as e:
-            logger.exception(e)
-            logger.error(
-                f"TurboJPEG DLL was not found at {TURBOJPEG_PATH}! Please double check installation!"
-            )
 
-        logger.info("Initialised succesfully")
+        # Initialize TurboJPEG decoder
+        self.tj = TurboJPEG(ns_shared.TURBOJPEG_PATH)
 
     def readEncodedFrame(self) -> str:
-        """Returns raw base64 encoded JPEG frame from robot camera."""
-        return (
-            self.robot._sdk.VISION.readCameraData().pdata
-        )  # reads from low-level unary_unary channel
+        """Reads raw base64 encoded JPEG frame from the robot camera via gRPC."""
+        try:
+            # Reads from low-level unary_unary channel
+            return self.robot._sdk.VISION.readCameraData().pdata
+        except Exception as e:
+            logger.error(f"Failed to read camera data from robot: {e}")
+            return ""
 
-    def b64_to_numpy_turbo(self, b64_string: str):
-        """Converts raw base64 encoded JPEG into numpy array"""
-        jpg_bytes = base64.b64decode(b64_string)
-        if not jpg_bytes:
+    def b64_to_bgr_turbo(self, b64_string: str) -> np.ndarray | None:
+        """Converts raw base64 encoded JPEG into a standard OpenCV BGR numpy array."""
+        if not b64_string:
             return None
-        print(jpg_bytes)
-        return self.tj.decode(jpg_bytes)  # returns a numpy array (H, W, 3)
+        try:
+            jpg_bytes = base64.b64decode(b64_string)
+            # Directly decode to standard BGR array for your vision perception code
+            bgr_frame = self.tj.decode(jpg_bytes, pixel_format=TJPF_BGR)
+            return bgr_frame
+        except Exception as e:
+            logger.error(f"TurboJPEG decoding error: {e}")
+            return None
+
+    def put_camera_frame(self, frame):
+        """Safely binds the local frame to the matching global SharedState field."""
+        if frame is None:
+            return
+
+        with self.camera_frame_lock:
+            self.camera_frame = frame
+            # Identity routing engine to map instances back to true variables
+            if self.camera_frame_lock is self.shared_state.sb_camera_frame_lock:
+                self.shared_state.sb_camera_frame = frame
+            elif self.camera_frame_lock is self.shared_state.eng_camera_frame_lock:
+                self.shared_state.eng_camera_frame = frame
 
     def mainloop(self):
+        """Thread loop pulling robot frames and pushing them out as raw BGR frames."""
+        logger.info("Robot Camera ingestion loop started.")
         while not self.queue_channels.kill_flag.is_set():
-            start_time = time.perf_counter()
-            frame = self.b64_to_numpy_turbo(self.readEncodedFrame())
-            with self.camera_frame_lock:
-                # now we have access
-                self.camera_frame = frame
-                if self.camera_frame_lock is self.shared_state.sb_camera_frame_lock:
-                    self.shared_state.sb_camera_frame = frame
-                elif self.camera_frame_lock is self.shared_state.eng_camera_frame_lock:
-                    self.shared_state.eng_camera_frame = frame
-            # now we release the lock, calculate delta time and do dynamic delays
-            end_time = time.perf_counter()
-            dt = end_time - start_time
-            sleep_time = self.dt_target - dt
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+            b64_data = self.readEncodedFrame()
+            if b64_data:
+                bgr_frame = self.b64_to_bgr_turbo(b64_data)
+                self.put_camera_frame(bgr_frame)
+            else:
+                # Avoid aggressive spinning if the stream drops frames momentarily
+                time.sleep(0.001)
+
 
 class CameraGUIProcessor:
-    """Thine only purpose is to make the raw frame usable by DearPyGUI."""
+    """Consumes the perception BGR frames and normalizes them into Float32 RGBA for DearPyGUI."""
 
     def __init__(
         self,
-        QueueChannels: QueueChannels,
-        SharedState: SharedState,
+        queue_channels: ns_shared.QueueChannels,
+        shared_state: ns_shared.SharedState,
         raw_camera_frame,
         raw_camera_frame_lock,
-        camera_frame,
-        camera_frame_lock,
+        gui_camera_frame,
+        gui_camera_frame_lock,
     ):
-        self.queue_channels = QueueChannels
-        self.shared_state = SharedState
-        self.camera_frame = camera_frame
-        self.camera_frame_lock = camera_frame_lock
+        self.queue_channels = queue_channels
+        self.shared_state = shared_state
         self.raw_camera_frame = raw_camera_frame
         self.raw_camera_frame_lock = raw_camera_frame_lock
+        self.gui_camera_frame = gui_camera_frame
+        self.gui_camera_frame_lock = gui_camera_frame_lock
 
+        # DearPyGUI standard viewport resolution configuration
         self.width = 640
         self.height = 480
+        self.output = np.empty((self.height, self.width, 4), dtype=np.float32)
 
-        # self.alpha = np.ones((self.height, self.width), dtype=np.float32)
-        # self.output = np.empty((self.height, self.width, 4), dtype=np.float32)
-
-    def process(self, frame):
+    def process(self, frame: np.ndarray) -> np.ndarray | None:
         if frame is None:
             return None
 
-        # Safety resize if needed
+        # Ensure correct texture sizing
         if frame.shape[0] != self.height or frame.shape[1] != self.width:
             frame = cv2.resize(frame, (self.width, self.height))
 
-        # SHEER OPTIMIZATION:
-        # 1. frame[:, :, ::-1] flips BGR to RGB via zero-overhead memory strides
-        # 2. .ravel() flattens it to a 1D sequence
-        # 3. Converting to float32 and dividing normalizes it perfectly for DPG
-        rgb_flat = frame[:, :, ::-1].ravel().astype(np.float32) / 255.0
-        return rgb_flat
+        # Convert robot BGR to RGB (let OpenCV allocate a temporary contiguous array)
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Now safely divide directly into our pre-allocated float32 slice
+        np.divide(rgb_frame, 255.0, out=self.output[:, :, :3])
+
+        # Set solid alpha layer
+        self.output[:, :, 3] = 1.0
+
+        return self.output.copy()
 
     def mainloop(self):
+        """Thread loop pulling BGR frames, transforming them, and piping to the GUI."""
+        last_frame_id = None
+        logger.info("Camera GUI conversion processing loop started.")
+
         while not self.queue_channels.kill_flag.is_set():
+            # Safely fetch the latest raw frame depending on the assigned lock
             with self.raw_camera_frame_lock:
                 if self.raw_camera_frame_lock is self.shared_state.sb_camera_frame_lock:
                     frame = self.shared_state.sb_camera_frame
-                elif self.raw_camera_frame_lock is self.shared_state.eng_camera_frame_lock:
+                elif (
+                    self.raw_camera_frame_lock
+                    is self.shared_state.eng_camera_frame_lock
+                ):
                     frame = self.shared_state.eng_camera_frame
                 else:
                     frame = self.raw_camera_frame
@@ -124,12 +143,25 @@ class CameraGUIProcessor:
                 time.sleep(0.001)
                 continue
 
-            processed = self.process(frame)
+            # Skip execution if the frame object hasn't rotated yet
+            if id(frame) == last_frame_id:
+                time.sleep(0.001)
+                continue
 
-            with self.camera_frame_lock:
-                self.camera_frame = processed
-                if self.camera_frame_lock is self.shared_state.sb_gui_camera_frame_lock:
-                    self.shared_state.sb_gui_camera_frame = processed
-                elif self.camera_frame_lock is self.shared_state.eng_gui_camera_frame_lock:
-                    self.shared_state.eng_gui_camera_frame = processed
+            last_frame_id = id(frame)
+            processed_gui_frame = self.process(frame)
 
+            if processed_gui_frame is not None:
+                with self.gui_camera_frame_lock:
+                    self.gui_camera_frame = processed_gui_frame
+                    # Update global shared state based on matching lock target
+                    if (
+                        self.gui_camera_frame_lock
+                        is self.shared_state.sb_gui_camera_frame_lock
+                    ):
+                        self.shared_state.sb_gui_camera_frame = processed_gui_frame
+                    elif (
+                        self.gui_camera_frame_lock
+                        is self.shared_state.eng_gui_camera_frame_lock
+                    ):
+                        self.shared_state.eng_gui_camera_frame = processed_gui_frame

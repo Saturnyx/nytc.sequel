@@ -89,8 +89,12 @@ class WebcamProcessor:
         if frame.shape[0] != self.height or frame.shape[1] != self.width:
             frame = cv2.resize(frame, (self.width, self.height))
 
-        np.divide(frame, 255.0, out=self.output[:, :, :3], casting="unsafe")
+        # Convert uint8 frame to float32 safely, then divide
+        # This mirrors the exact logic we used to fix the robot camera layout exception
+        float_frame = frame.astype(np.float32)
+        np.divide(float_frame, 255.0, out=self.output[:, :, :3])
 
+        # Set solid alpha layer
         self.output[:, :, 3] = 1.0
 
         return self.output.copy()

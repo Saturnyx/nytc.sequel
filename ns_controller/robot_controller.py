@@ -22,32 +22,32 @@ class RobotController:
 
         self.queue_channels = QueueChannels
         self.sharedState = SharedState
-
+        self.engbot = engbot
+        self.sbbot = sbbot
         if not ns_shared.DEBUG_MODE:
             self.setup_engbot(engbot)
             self.setup_sbbot(sbbot)
 
     def setup_engbot(self, engbot):
-        self.engbot = engbot
         logger.info("Attempting to connect ENGBot...")
         self.engbot.connect()
+        # put shi here
+        logger.info("Loading ENGBot models...")
+        self.engbot._sdk.load_models(
+            [
+                "color_recognition",  # detects dominant colors
+                "word_recognition",  # OCR: reads printed text
+                "line_recognition",  # for line-following tasks
+                "face_recognition",  # identifies registered faces by name
+                "apriltag_qrcode",  # AprilTag recognition
+            ]
+        )
+        # end
 
     def setup_sbbot(self, sbbot):
-        self.sbbot = sbbot
+
         logger.info("Attempting to connect SBBot...")
         self.sbbot.connect()
-
-    def map_value_clamped(self, value, in_min, in_max, out_min, out_max):
-        # Get the unclipped mapped value
-        mapped = out_min + (
-            float(value - in_min) / float(in_max - in_min) * (out_max - out_min)
-        )
-
-        # Ensure the bounds are respected regardless of whether out_min or out_max is larger
-        true_min = min(out_min, out_max)
-        true_max = max(out_min, out_max)
-
-        return int(max(true_min, min(true_max, mapped)))
 
     def mainloop(self):
         """
@@ -112,12 +112,11 @@ class RobotController:
         self.advance_phase()
 
     def phase2(self):
-        # Move forward while finding red ball, change colour when found
-        # Align with red ball
-        # Pickup
-        # Goto the stop line and stop
-        # Find villian, change colour when found
-        # Shoot at pos 1 or 2 or 3
+        got.face_recognition_add_name("Bad Guy")
+        # Call red ball pickup code
+        # stop at line
+        # find villian at pos 1,2,3
+        # align and throw at pos 1,2,3
 
         time.sleep(1)
         self.advance_phase()
@@ -147,19 +146,76 @@ class RobotController:
         self.advance_phase()
 
     def opcontrol(self):
-        # time.sleep(1)
+        self.max_rpm = 360
+
+        # --- Tuning Variables ---
+        SIGNIFICANT_CHANGE = (
+            0.03  # Target threshold (how much a stick must move to update)
+        )
+        HEARTBEAT_INTERVAL = 15  # Max seconds to wait before refreshing active inputs
+
+        # Track past values
+        last_x = 0.0
+        last_y = 0.0
+        last_r = 0.0
+        last_send_time = 0.0
+        dx = 0.0
+        dy = 0.0
+        dr = 0.0
+
         while not self.queue_channels.kill_flag.is_set():
             with self.sharedState.drive_command_lock:
                 x_movement = self.sharedState.drive_x
                 y_movement = self.sharedState.drive_y
                 r_movement = self.sharedState.drive_r
 
-            x_movement = self.map_value_clamped(x_movement, -1, 1, -80, 80)
-            y_movement = self.map_value_clamped(y_movement, -1, 1, -80, 80)
-            r_movement = self.map_value_clamped(r_movement, 1, -1, -280, 280)
+            # 1. Evaluate Delta Changes
+            dx = abs(x_movement - last_x)
+            dy = abs(y_movement - last_y)
+            dr = abs(r_movement - last_r)
 
-            self.engbot._sdk.mecanum_move_xyz(x_movement, y_movement, r_movement)
-            time.sleep(0.04)
+            # 2. Check if the robot is completely resting
+            is_resting = x_movement == 0.0 and y_movement == 0.0 and r_movement == 0.0
+            was_resting = last_x == 0.0 and last_y == 0.0 and last_r == 0.0
+
+            # 3. Determine if an absolute network transmission is required
+            current_time = time.time()
+            time_since_last_send = current_time - last_send_time
+
+            should_send = False
+
+            if (
+                dx > SIGNIFICANT_CHANGE
+                or dy > SIGNIFICANT_CHANGE
+                or dr > SIGNIFICANT_CHANGE
+            ):
+                # The user moved a stick significantly
+                should_send = True
+            elif is_resting != was_resting:
+                # Transited from moving to absolute zero, or zero to moving
+                should_send = True
+            elif not is_resting and time_since_last_send >= HEARTBEAT_INTERVAL:
+                # Sticks are held down constantly; refresh before the internal gRPC timeout cuts power
+                should_send = True
+
+            # 4. Process and execute command if approved
+            if should_send:
+                drive_tuple = self.engbot.calculate_mecanum_powers(
+                    x_movement, y_movement, r_movement, self.max_rpm
+                )
+
+                self.engbot._sdk.mecanum_motor_control(
+                    drive_tuple[0], drive_tuple[1], drive_tuple[2], drive_tuple[3]
+                )
+
+                # Cache historical state
+                last_x = x_movement
+                last_y = y_movement
+                last_r = r_movement
+                last_send_time = current_time
+
+            # Keep your thread execution cycle polite to the CPU
+            time.sleep(0.01)
 
     def advance_phase(self):
         with self.sharedState.phase_state.lock:

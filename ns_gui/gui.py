@@ -25,11 +25,11 @@ class BaseWindow:
         pass
 
 
-class CameraWindow(BaseWindow):
+class WebcamWindow(BaseWindow):
     def __init__(self, gui):
-        super().__init__(gui, "Camera")
-        self.texture_tag = "camera_texture"
-        self.image_tag = "camera_image"
+        super().__init__(gui, "Webcam")
+        self.texture_tag = "webcam_texture"
+        self.image_tag = "webcam_image"
         self.width = 640
         self.height = 480
 
@@ -52,6 +52,53 @@ class CameraWindow(BaseWindow):
     def update(self):
         with self.gui.shared_state.webcam_camera_frame_lock:
             frame = self.gui.shared_state.webcam_camera_frame
+        if frame is None:
+            return
+        dpg.set_value(self.texture_tag, frame.ravel())
+
+
+class RobotCameraWindow(BaseWindow):
+    def __init__(
+        self, gui, title: str, frame_attr_name: str, frame_lock: threading.Lock
+    ):
+        """
+        Args:
+            gui: Main GUI instance reference.
+            title: Title of the window (e.g., "SBBot Camera" or "ENGBot Camera").
+            frame_attr_name: String name of the variable on shared_state (e.g., 'sb_gui_camera_frame').
+            frame_lock: Reference to the corresponding threading.Lock object.
+        """
+        super().__init__(gui, title)
+        # Unique tags based on title string to avoid DPG collisions
+        self.texture_tag = f"{title.lower().replace(' ', '_')}_texture"
+        self.image_tag = f"{title.lower().replace(' ', '_')}_image"
+        self.width = 640
+        self.height = 480
+
+        self.frame_attr_name = frame_attr_name
+        self.frame_lock = frame_lock
+
+    def build(self):
+        with dpg.texture_registry():  # type: ignore
+            dpg.add_dynamic_texture(
+                width=self.width,
+                height=self.height,
+                default_value=[0.0] * (self.width * self.height * 4),
+                tag=self.texture_tag,
+            )
+
+        with dpg.window(
+            label=self.title,
+            width=self.width + 20,
+            height=self.height + 40,
+        ) as self.window_tag:  # type: ignore
+            dpg.add_image(self.texture_tag, tag=self.image_tag)
+
+    def update(self):
+        # Safely fetch the dynamic attribute name from shared_state via reflection
+        with self.frame_lock:
+            frame = getattr(self.gui.shared_state, self.frame_attr_name, None)
+
         if frame is None:
             return
         dpg.set_value(self.texture_tag, frame.ravel())
@@ -154,8 +201,6 @@ class PhaseTimeline(BaseWindow):
             mousebutton=dpg.mvMouseButton_Right,
             tag=self.context_menu_tag,
         ):  # type: ignore
-            # dpg.add_text("Actions")
-            # dpg.add_separator()
             dpg.add_menu_item(label="Delete Phase", callback=self._cb_delete_phase)
             dpg.add_menu_item(label="Clear All Phases", callback=self._cb_clear_phase)
 
@@ -195,13 +240,11 @@ class PhaseTimeline(BaseWindow):
         y1 = y_center - (self.phase_height // 2)
         y2 = y_center + (self.phase_height // 2)
 
-        # Strictly looping over concrete Phase Enum objects now
         for idx, phase_enum in enumerate(queue):
             display_name = phase_enum.value[0]
             p_type = phase_enum.value[1]
             func_text = p_type.value.upper()
 
-            # --- DYNAMIC COLOR ENGINE (String-Safe Variant) ---
             is_autonomous = (
                 p_type.name == "AUTONOMOUS"
                 if hasattr(p_type, "name")
@@ -214,34 +257,31 @@ class PhaseTimeline(BaseWindow):
             )
 
             if is_running and idx < current_idx:
-                # PAST STEPS: Smooth out focus to gray scale
                 fill_color = (65, 70, 75, 255)
                 accent_color = (130, 140, 150, 180)
                 text_color = (150, 150, 150, 180)
 
             elif is_running and idx == current_idx:
-                # ACTIVE EXECUTING STEP: Bold high-vibrancy warnings
                 if is_autonomous:
-                    fill_color = (36, 111, 232, 255)  # Vivid Royal Blue
+                    fill_color = (36, 111, 232, 255)
                     accent_color = (180, 220, 255, 255)
                 elif is_pose:
-                    fill_color = (138, 43, 226, 255)  # Electric Purple / Violet
-                    accent_color = (230, 190, 255, 255)  # Soft Lavender Text Accent
+                    fill_color = (138, 43, 226, 255)
+                    accent_color = (230, 190, 255, 255)
                 else:
-                    fill_color = (220, 110, 10, 255)  # Active Manual Amber
+                    fill_color = (220, 110, 10, 255)
                     accent_color = (255, 220, 170, 255)
                 text_color = (255, 255, 255, 255)
 
             else:
-                # UPCOMING FUTURE STEPS: Light/Ice clear variants
                 if is_autonomous:
-                    fill_color = (75, 105, 150, 255)  # Slate Ice Blue
+                    fill_color = (75, 105, 150, 255)
                     accent_color = (190, 215, 240, 220)
                 elif is_pose:
-                    fill_color = (90, 60, 135, 255)  # Deep Matte Amethyst
-                    accent_color = (210, 180, 240, 220)  # Muted Purple Accent
+                    fill_color = (90, 60, 135, 255)
+                    accent_color = (210, 180, 240, 220)
                 else:
-                    fill_color = (165, 115, 75, 255)  # Soft Terracotta Matte
+                    fill_color = (165, 115, 75, 255)
                     accent_color = (240, 210, 190, 220)
                 text_color = (230, 235, 245, 255)
 
@@ -275,7 +315,6 @@ class PhaseTimeline(BaseWindow):
 
             x_offset += self.phase_width + self.phase_spacing
 
-        # Playhead Resolution
         if len(queue) > 0:
             target_idx = current_idx
             target_idx = max(0, min(target_idx, len(queue)))
@@ -367,25 +406,23 @@ class PhaseTimeline(BaseWindow):
         if display_name == "+ Add Phase":
             return
 
-        # Explicit translation from GUI selection string directly into pure Enum object
         phase_enum = self._get_phase_from_display_name(display_name)
 
         if phase_enum:
             state = self.gui.shared_state.phase_state
             with state.lock:
                 if not state.is_running.is_set():
-                    state.phase_queue.append(phase_enum)  # Enums only
+                    state.phase_queue.append(phase_enum)
                     logger.info(f"Queue updated: Appended {phase_enum}")
 
         dpg.set_value(sender, "+ Add Phase")
 
     def _cb_clear_phase(self, sender, app_data):
-
         state = self.gui.shared_state.phase_state
         with state.lock:
             if not state.is_running.is_set():
                 state.phase_queue.clear()
-                logger.info(f"Queue updated: Removed all phases")
+                logger.info("Queue updated: Removed all phases")
 
         self.right_clicked_index = None
 
@@ -412,7 +449,6 @@ class PhaseTimeline(BaseWindow):
         self.right_clicked_index = None
 
     def _get_phase_from_display_name(self, name: str) -> ns_shared.Phase | None:
-        # Used strictly for translating UI combo dropdown clicks back to core Enums
         for phase in ns_shared.Phase:
             if phase.value[0] == name:
                 return phase
@@ -436,7 +472,27 @@ class GUI:
             except Exception:
                 pass
 
-        self.windows.append(CameraWindow(self))
+        # Initializing the distinct windows using our dynamic references
+        self.windows.append(WebcamWindow(self))
+
+        self.windows.append(
+            RobotCameraWindow(
+                gui=self,
+                title="SBBot Camera",
+                frame_attr_name="sb_gui_camera_frame",
+                frame_lock=self.shared_state.sb_gui_camera_frame_lock,
+            )
+        )
+
+        self.windows.append(
+            RobotCameraWindow(
+                gui=self,
+                title="ENGBot Camera",
+                frame_attr_name="eng_gui_camera_frame",
+                frame_lock=self.shared_state.eng_gui_camera_frame_lock,
+            )
+        )
+
         self.windows.append(PhaseTimeline(self))
 
         for window in self.windows:
@@ -452,7 +508,6 @@ class GUI:
         )
         dpg.setup_dearpygui()
         dpg.show_viewport()
-
         dpg.maximize_viewport()
 
     def mainloop(self):

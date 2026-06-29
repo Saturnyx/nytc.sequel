@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import pygame
@@ -6,6 +7,8 @@ import pygame
 from ns_shared import QueueChannels, SharedState
 
 logger = logging.getLogger(__name__)
+
+os.environ["SDL_JOYSTICK_HIDAPI_PS4_RUMBLE"] = "1"
 
 
 class PS4ControllerDriver:
@@ -29,6 +32,7 @@ class PS4ControllerDriver:
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
         logger.info(f"Successfully locked onto controller: {self.joystick.get_name()}")
+        self.joystick.rumble(0.5, 0.5, 250)
         return True
 
     def filter_deadzone(self, value: float) -> float:
@@ -88,7 +92,7 @@ class PS4ControllerDriver:
             # Note: Pygame reads Y-axis inverted (Up is negative), so we flip it
             raw_x = self.joystick.get_axis(0)
             raw_y = -self.joystick.get_axis(1)
-            raw_r = self.joystick.get_axis(2)
+            raw_r = -self.joystick.get_axis(2)
 
             # 2. Process math limits
             x_vel = self.filter_deadzone(raw_x)
@@ -109,4 +113,4 @@ class PS4ControllerDriver:
                     self.joystick.get_button(1)
                 )
 
-            time.sleep(0.02)  # ~50Hz sampling is more than fast enough for human inputs
+            # time.sleep(0.02)  # ~50Hz sampling is more than fast enough for human inputs
