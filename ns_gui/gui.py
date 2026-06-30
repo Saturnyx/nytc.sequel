@@ -289,9 +289,11 @@ class PhaseTimeline(BaseWindow):
                 (x_offset, y1),
                 (x_offset + self.phase_width, y2),
                 fill=fill_color,
-                color=(15, 15, 15, 255)
-                if idx != current_idx or not is_running
-                else (255, 255, 255, 255),
+                color=(
+                    (15, 15, 15, 255)
+                    if idx != current_idx or not is_running
+                    else (255, 255, 255, 255)
+                ),
                 rounding=4.0,
                 thickness=1.5 if (idx == current_idx and is_running) else 1.0,
                 parent=self.track_drawlist,

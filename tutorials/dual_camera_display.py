@@ -32,7 +32,6 @@ webcam = cv2.VideoCapture(0)
 
 def main():
     while True:
-
         #  Robot Camera
 
         # Read a raw JPEG frame from the robot camera over the network
